@@ -80,8 +80,14 @@ struct ExpenseView: View {
         }
     }
     
-    init(sortOrder: [SortDescriptor<ExpenseItem>]) {
-        _expenses = Query(sort: sortOrder)
+    init(expenseType: String, sortOrder: [SortDescriptor<ExpenseItem>]) {
+        _expenses = Query(filter: #Predicate<ExpenseItem> { expense in
+            if (expenseType == "") {
+                return true
+            } else {
+                return (expense.type == expenseType)
+            }
+        }, sort: sortOrder)
     }
     
     func removeItems(at offsets: IndexSet) {
@@ -93,6 +99,6 @@ struct ExpenseView: View {
 }
 
 #Preview {
-    ExpenseView(sortOrder: [SortDescriptor(\ExpenseItem.name)])
+    ExpenseView(expenseType: "Personal", sortOrder: [SortDescriptor(\ExpenseItem.name)])
         .modelContainer(for: ExpenseItem.self)
 }

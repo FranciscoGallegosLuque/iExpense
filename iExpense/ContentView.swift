@@ -126,6 +126,7 @@ struct ContentView: View {
     @Environment(\.modelContext) var modelContext
     @Query var expenses: [ExpenseItem]
 //    @State private var showingAddExpense = false
+    @State private var expenseTypeShowed = ""
     
     @State private var sortOrder = [
         SortDescriptor(\ExpenseItem.name),
@@ -135,7 +136,7 @@ struct ContentView: View {
     
     var body: some View {
         NavigationStack {
-            ExpenseView(sortOrder: sortOrder)
+            ExpenseView(expenseType: expenseTypeShowed, sortOrder: sortOrder)
             //            List {
             //
             //                ForEach(expenses) { expense in
@@ -206,6 +207,21 @@ struct ContentView: View {
                 .toolbar {
                     NavigationLink ("Add expense") {
                         AddView()
+                    }
+                    
+
+                    
+                    Menu("Sort", systemImage: "line.3.horizontal.decrease.circle.fill") {
+                        Picker("Filter", selection: $expenseTypeShowed) {
+                            Text("Show only Personal expenses")
+                                .tag("Personal")
+                            
+                            Text("Show only Business expenses")
+                                .tag("Business")
+                            
+                            Text("Remove filters")
+                                .tag("")
+                        }
                     }
                     
                     Menu("Sort", systemImage: "arrow.up.arrow.down") {
