@@ -5,6 +5,7 @@
 //  Created by Francisco Manuel Gallegos Luque on 25/01/2025.
 //
 import Observation
+import SwiftData
 import SwiftUI
 
 //@Observable
@@ -116,137 +117,132 @@ import SwiftUI
 //}
 
 
-struct ExpenseItem: Identifiable, Codable, Equatable {
-    var id = UUID()
-    let name: String
-    let type: String
-    let amount: Double
-}
 
-@Observable
-class Expenses {
-    var personalItems: [ExpenseItem] {
-        items.filter { $0.type == "Personal" }
-    }
 
-    var businessItems: [ExpenseItem] {
-        items.filter { $0.type == "Business" }
-    }
-    
-    var items = [ExpenseItem]() {
-        didSet {
-            if let encoded = try? JSONEncoder().encode(items) {
-                UserDefaults.standard.set(encoded, forKey: "Items")
-            }
-        }
-        
-    }
-    init() {
-        if let savedItems = UserDefaults.standard.data(forKey: "Items") {
-            if let decodedItems = try? JSONDecoder().decode([ExpenseItem].self, from: savedItems) {
-                items = decodedItems
-                return
-            }
-        }
-        
-        items = []
-    }
-}
+
 
 struct ContentView: View {
-    @State private var expenses = Expenses()
-    
+//    @Bindable private var expenses = Expenses()
+    @Environment(\.modelContext) var modelContext
+    @Query var expenses: [ExpenseItem]
 //    @State private var showingAddExpense = false
+    
+    @State private var sortOrder = [
+        SortDescriptor(\ExpenseItem.name),
+        SortDescriptor(\ExpenseItem.amount)
+    ]
     
     
     var body: some View {
         NavigationStack {
-            List {
-                if (expenses.items.count { $0.type == "Business" } != 0) {
-                    Section ("Business expenses"){
-                        ForEach(expenses.items.filter { $0.type == "Business" }) { item in
-                            HStack {
-                                VStack(alignment: .leading) {
-                                    Text(item.name)
-                                        .font(.headline)
-                                    
-                                    
-                                    Text(item.type)
-                                }
-                                
-                                Spacer()
-                                
-                                Text(item.amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
-                                    .fontWeight(item.amount < 10 ? .light : (item.amount < 100) ? Font.Weight.regular : .bold)
-                            }
-                        }
-                        .onDelete(perform: removeBusinessItems)
+            ExpenseView(sortOrder: sortOrder)
+            //            List {
+            //
+            //                ForEach(expenses) { expense in
+            //                    HStack {
+            //                        VStack(alignment: .leading) {
+            //                            Text(expense.name)
+            //                                .font(.headline)
+            //
+            //
+            //                            Text(expense.type)
+            //                        }
+            //
+            //                        Spacer()
+            //
+            //                        Text(expense.amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+            //                            .fontWeight(expense.amount < 10 ? .light : (expense.amount < 100) ? Font.Weight.regular : .bold)
+            //                    }
+            //                }
+            //                .onDelete(perform: removeItems)
+            
+            
+            //                if (expenses.count { $0.type == "Business" } != 0) {
+            //                    Section ("Business expenses"){
+            //                        ForEach(expenses.filter { $0.type == "Business" }) { expense in
+            //                            HStack {
+            //                                VStack(alignment: .leading) {
+            //                                    Text(expense.name)
+            //                                        .font(.headline)
+            //
+            //
+            //                                    Text(expense.type)
+            //                                }
+            //
+            //                                Spacer()
+            //
+            //                                Text(expense.amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+            //                                    .fontWeight(expense.amount < 10 ? .light : (expense.amount < 100) ? Font.Weight.regular : .bold)
+            //                            }
+            //                        }
+            //                        .onDelete(perform: removeBusinessItems)
+            //                    }
+            //                }
+            
+            //                if (expenses.count { $0.type == "Personal" } != 0) {
+            //                    Section ("Personal expenses"){
+            //                        ForEach(expenses.filter { $0.type == "Personal" }) { expense in
+            //                            HStack {
+            //                                VStack(alignment: .leading) {
+            //                                    Text(expense.name)
+            //                                        .font(.headline)
+            //
+            //
+            //                                    Text(expense.type)
+            //                                }
+            //
+            //                                Spacer()
+            //
+            //                                Text(expense.amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+            //                                    .fontWeight(expense.amount < 10 ? .light : (expense.amount < 100) ? Font.Weight.regular : .bold)
+            //                            }
+            //                        }
+            //                        .onDelete(perform: removePersonalItems)
+            //                    }
+            //
+            //                }
+            
+                .navigationTitle("iExpense")
+                .toolbar {
+                    NavigationLink ("Add expense") {
+                        AddView()
                     }
                     
-                }
-                
-                if (expenses.items.count { $0.type == "Personal" } != 0) {
-                    Section ("Personal expenses"){
-                        ForEach(expenses.items.filter { $0.type == "Personal" }) { item in
-                            HStack {
-                                VStack(alignment: .leading) {
-                                    Text(item.name)
-                                        .font(.headline)
-                                    
-                                    
-                                    Text(item.type)
-                                }
-                                
-                                Spacer()
-                                
-                                Text(item.amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
-                                    .fontWeight(item.amount < 10 ? .light : (item.amount < 100) ? Font.Weight.regular : .bold)
-                            }
+                    Menu("Sort", systemImage: "arrow.up.arrow.down") {
+                        Picker("Sort", selection: $sortOrder) {
+                            Text("Sort by Name")
+                                .tag([
+                                    SortDescriptor(\ExpenseItem.name),
+                                    SortDescriptor(\ExpenseItem.amount)
+                                ])
+                            
+                            Text("Sort by Amount")
+                                .tag([
+                                    SortDescriptor(\ExpenseItem.amount),
+                                    SortDescriptor(\ExpenseItem.name)
+                                ])
                         }
-                        .onDelete(perform: removePersonalItems)
                     }
-                    
+                    .navigationBarBackButtonHidden()
+                    //                Button("Add expense", systemImage: "plus") {
+                    //                    showingAddExpense = true
+                    //                }
                 }
-            }
-            .navigationTitle("iExpense")
-            .toolbar {
-                NavigationLink ("Add expense") {
-                        AddView(expenses: expenses)
-                }
-            .navigationBarBackButtonHidden()
-//                Button("Add expense", systemImage: "plus") {
-//                    showingAddExpense = true
-//                }
-            }
-//            .sheet(isPresented: $showingAddExpense) {
-//                AddView(expenses: expenses)
-//            }
+            //            .sheet(isPresented: $showingAddExpense) {
+            //                AddView(expenses: expenses)
+            //            }
         }
-        
-        
     }
     
-    func removeItems(at offsets: IndexSet, in inputArray: [ExpenseItem]) {
-        var objectsToDelete = IndexSet()
-
-        for offset in offsets {
-            let item = inputArray[offset]
-
-            if let index = expenses.items.firstIndex(of: item) {
-                objectsToDelete.insert(index)
-            }
-        }
-
-        expenses.items.remove(atOffsets: objectsToDelete)
-    }
     
-    func removePersonalItems(at offsets: IndexSet) {
-        removeItems(at: offsets, in: expenses.personalItems)
-    }
-
-    func removeBusinessItems(at offsets: IndexSet) {
-        removeItems(at: offsets, in: expenses.businessItems)
-    }
+    
+//    func removePersonalItems(at offsets: IndexSet) {
+//        removeItems(at: offsets, in: expenses.filter({ $0.type == "Personal" }))
+//    }
+//
+//    func removeBusinessItems(at offsets: IndexSet) {
+//        removeItems(at: offsets, in: expenses.filter( {$0.type == "Business"} ))
+//    }
     
     
 }
