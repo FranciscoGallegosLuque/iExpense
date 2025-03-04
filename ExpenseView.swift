@@ -19,16 +19,15 @@ struct ExpenseView: View {
                     VStack(alignment: .leading) {
                         Text(expense.name)
                             .font(.headline)
-                        
-                        
                         Text(expense.type)
                     }
-                    
                     Spacer()
-                    
                     Text(expense.amount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
                         .fontWeight(expense.amount < 10 ? .light : (expense.amount < 100) ? Font.Weight.regular : .bold)
                 }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(expense.name), costs \(expense.amount)")
+                .accessibilityHint(expense.type)
             }
             .onDelete(perform: removeItems)
     
